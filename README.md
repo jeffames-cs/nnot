@@ -5,4 +5,4 @@ Neural network for object tracking
 
 To run the neural network, execute the following:
 
-    ./run-ann.sh
+    ./ann.py
