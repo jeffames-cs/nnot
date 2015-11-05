@@ -1,14 +1,11 @@
 #!/usr/bin/env python
 
 import random
+from nott_params import *
 
-input_x = 10
-input_y = 10
-num_samples = int(input_x * input_y * 0.1)
-num_inputs = input_x + input_y
-num_outputs = 4
+num_samples = int(gridDim[0] * gridDim[1] * 0.1)
 
-def generate_data(numx, numy, args):
+def generate_data(numx, numy):
     data = []
     stimulus = (random.randint(0, numx), random.randint(0, numy))
 
@@ -34,12 +31,11 @@ def print_input(left, right):
     print(' '.join(strData))
 
 if __name__ == '__main__':
-    import sys
     random.seed()
     print_header()
     for i in range(num_samples):
-        data, stimulus = generate_data(input_x, input_y, sys.argv)
+        data, stimulus = generate_data(gridDim[0], gridDim[1])
         print_input(data, data) # duplicate for two eyes
-        scaled_x = 2 * float(stimulus[0]) / input_x - 1
-        scaled_y = 2 * float(stimulus[1]) / input_y - 1
+        scaled_x = 2 * float(stimulus[0]) / gridDim[0] - 1
+        scaled_y = 2 * float(stimulus[1]) / gridDim[1] - 1
         print("{0} {1} {2} {3}".format(scaled_x, scaled_y, scaled_x, scaled_y))
