@@ -11,7 +11,7 @@ nn_file    = "objtrack.net"
 windowSize = (600, 600)
 
 class Circle(QWidget):
-    radius = 20
+    radius = 15
 
     def __init__(self, x, y, color, parent=None):
         QWidget.__init__(self, parent)
