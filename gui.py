@@ -97,10 +97,7 @@ class ObjectTracker(QWidget):
         return (x, y)
 
     def testValue(self):
-        grid = [0 for i in range(gridDim[0] * gridDim[1])]
-        grid[self.stimulus[1] * gridDim[0] + self.stimulus[0]] = 1
-        input = grid + grid # duplicate for two eyes
-        return self.ann.run(input)
+        return self.ann.run(self.stimulus)
 
     def mouseMoveEvent(self, event):
         (x, y) = self.xyToGrid(event.x(), event.y())
