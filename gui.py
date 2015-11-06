@@ -36,6 +36,26 @@ class ObjectLabel(QLabel):
         self.setText('(,)')
         self.setMouseTracking(True)
 
+class ObjectGrid(QWidget):
+    def __init__(self, parent = None):
+        super(ObjectGrid, self).__init__(parent)
+        self.setMouseTracking(True)
+
+    def paintEvent(self, event):
+        qp = QPainter()
+        qp.begin(self)
+        qp.setPen(QPen(Qt.black, 3, Qt.SolidLine))
+        qp.setBrush(Qt.black)
+        cellWidth = int(float(self.width()) / gridDim[0])
+        cellHeight = int(float(self.height()) / gridDim[1])
+        for i in range(0, self.width(), cellWidth):
+            qp.drawLine(i, 0, i, self.height())
+        qp.drawLine(self.width(), 0, self.width(), self.height())
+        for j in range(0, self.height(), cellHeight):
+            qp.drawLine(0, j, self.width(), j)
+        qp.drawLine(0, self.height(), self.width(), self.height())
+        qp.end()
+
 class ObjectTracker(QWidget):
     def __init__(self, ann, parent = None):
         super(ObjectTracker, self).__init__(parent)
@@ -58,6 +78,9 @@ class ObjectTracker(QWidget):
 
         self.rightEyePoint = Circle(0, 0, Qt.green)
         self.rightEyePoint.setParent(self)
+
+        self.grid = ObjectGrid()
+        self.grid.setParent(self)
 
         self.setTextLabelPosition()
 
@@ -108,6 +131,7 @@ class ObjectTracker(QWidget):
 
     def resizeEvent(self, event):
         self.positionLabel.resize(self.width(), self.height())
+        self.grid.resize(self.width(), self.height())
         QWidget.resizeEvent(self, event)
 
     def setTextLabelPosition(self):
