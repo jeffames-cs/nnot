@@ -109,12 +109,6 @@ class ObjectTracker(QWidget):
             self.predicted = self.testValue()
             self.setTextLabelPosition()
 
-            print("Stimulus: %d, %d" % (x, y))
-            print("Predicted %g, %g, %g, %g" % (((self.predicted[0] + 1) / 2.0) * gridDim[0],
-                                                ((self.predicted[1] + 1) / 2.0) * gridDim[1],
-                                                ((self.predicted[2] + 1) / 2.0) * gridDim[0],
-                                                ((self.predicted[3] + 1) / 2.0) * gridDim[1]))
-
             (stimX, stimY) = self.gridToXY(x, y)
             self.stimulusPoint.move(stimX - self.stimulusPoint.radius/2, stimY - self.stimulusPoint.radius/2)
 
