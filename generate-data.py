@@ -6,11 +6,9 @@ from nott_params import *
 num_samples = int(gridDim[0] * gridDim[1] * 10)
 
 def generate_data(numx, numy):
-    data = []
+    data = ['0' for i in range(numx * numy)]
     stimulus = (random.randint(0, numx - 1), random.randint(0, numy - 1))
-    for i in range(numx):
-        data.append([0 for j in range(numy)])
-    data[stimulus[1]][stimulus[0]] = 1
+    data[stimulus[1] * numx + stimulus[0]] = '1'
     return data, stimulus
 
 def print_header():
@@ -18,11 +16,7 @@ def print_header():
 
 def print_input(left, right):
     data = left + right
-    strData = []
-    for row in data:
-        rowStr = [str(elt) for elt in row]
-        strData.append(' '.join(rowStr))
-    print(' '.join(strData))
+    print(' '.join(data))
 
 if __name__ == '__main__':
     random.seed()
