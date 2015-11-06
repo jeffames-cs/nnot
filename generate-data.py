@@ -32,4 +32,5 @@ if __name__ == '__main__':
         print_input(data, data) # duplicate for two eyes
         scaled_x = 2 * float(stimulus[0]) / gridDim[0] - 1
         scaled_y = 2 * float(stimulus[1]) / gridDim[1] - 1
-        print("{0} {1} {2} {3}".format(scaled_x, scaled_y, scaled_x, scaled_y))
+        print("{0} {1} {2} {3}".format(scaled_x, scaled_y,
+                                       scaled_x, scaled_y))

@@ -5,7 +5,7 @@ from nott_params import *
 
 connection_rate = 1
 learning_rate   = 0.7
-num_hidden      = 4
+num_hidden      = 20
 
 desired_error              = 0.0001
 max_iterations             = 100000
@@ -19,7 +19,7 @@ def trainNet():
     ann = libfann.neural_net()
     ann.create_sparse_array(connection_rate, (num_inputs, num_hidden, num_outputs))
     ann.set_learning_rate(learning_rate)
-    ann.set_activation_function_output(libfann.SIGMOID_SYMMETRIC_STEPWISE)
+    ann.set_activation_function_output(libfann.SIGMOID_SYMMETRIC)
     ann.train_on_file(train_file, max_iterations, iterations_between_reports, desired_error)
     ann.save(nn_file)
 
