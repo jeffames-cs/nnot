@@ -7,16 +7,10 @@ num_samples = int(gridDim[0] * gridDim[1] * 10)
 
 def generate_data(numx, numy):
     data = []
-    stimulus = (random.randint(0, numx), random.randint(0, numy))
-
+    stimulus = (random.randint(0, numx - 1), random.randint(0, numy - 1))
     for i in range(numx):
-        data.append([])
-        for j in range(numy):
-            if (i, j) == stimulus:
-                data[i].append(1)
-            else:
-                data[i].append(0)
-
+        data.append([0 for j in range(numy)])
+    data[stimulus[1]][stimulus[0]] = 1
     return data, stimulus
 
 def print_header():
