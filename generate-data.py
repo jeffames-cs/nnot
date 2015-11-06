@@ -3,7 +3,7 @@
 import random
 from nott_params import *
 
-num_samples = int(gridDim[0] * gridDim[1] * 0.1)
+num_samples = int(gridDim[0] * gridDim[1] * 10)
 
 def generate_data(numx, numy):
     data = []
