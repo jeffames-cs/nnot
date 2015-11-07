@@ -112,8 +112,7 @@ class OTFrame(wx.Frame):
     def __init__(self, parent, ann, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
         wx.Frame.__init__(self, None, id, title, pos, size, style, name)
         panel = wx.Panel(self)
-        panel.SetFocus()
-        self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUp)
+        panel.SetBackgroundColour('#333333')
 
         menubar = wx.MenuBar()
         self.SetMenuBar(menubar)
@@ -122,12 +121,15 @@ class OTFrame(wx.Frame):
         leye = Eye(Point(4, 5), Vector(0, 0))
         reye = Eye(Point(6, 5), Vector(0, 0))
 
-        grid = OTGrid(self, stimulus, leye, reye, ann)
-        grid.SetSize((0.9 * size[0], 0.9 * size[1]))
+        grid = OTGrid(panel, stimulus, leye, reye, ann)
+        grid.SetBackgroundColour('#aaaaaa')
 
-        box = wx.BoxSizer(wx.VERTICAL)
-        box.Add(grid, 1, wx.ALL)
-        panel.SetSizer(box)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(grid, 1, wx.ALL|wx.EXPAND, 20)
+        panel.SetSizer(vbox)
+
+        self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUp)
+        self.Show()
 
     def OnKeyUp(self, event):
         keyCode = event.GetKeyCode()
@@ -135,12 +137,9 @@ class OTFrame(wx.Frame):
             self.Close()
 
 if __name__ == '__main__':
-    app = wx.App()
-
     ann = libfann.neural_net()
     ann.create_from_file(nn_file)
 
-    frame = OTFrame(None, ann, size=windowSize, title='Neural network object tracker')
-    frame.Show()
-
+    app = wx.App()
+    OTFrame(None, ann, size=windowSize, title='Neural network object tracker')
     app.MainLoop()
