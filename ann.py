@@ -9,7 +9,7 @@ num_hidden      = max(5, min(100, (gridDim[0] + gridDim[1]) / 2))
 
 desired_error              = 0.0001
 max_iterations             = 100000
-iterations_between_reports = 1000
+iterations_between_reports = 200
 
 nn_file    = "objtrack.net"
 train_file = "training.data"

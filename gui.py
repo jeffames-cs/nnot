@@ -7,6 +7,9 @@ from nott_params import *
 nn_file    = "objtrack.net"
 windowSize = (600, 600)
 
+def clamp(x, rangeLow, rangeHigh):
+    return max(rangeLow, min(rangeHigh, x))
+
 class Point:
     def __init__(self, x, y):
         self.x = x
@@ -34,11 +37,43 @@ class OTGrid(wx.Panel):
         self.ann = ann
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_MOTION, self.OnMouseMovement)
+        self.Bind(wx.EVT_CLOSE, self.OnClose)
+
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
+        fps = 60
+        self.timer.Start(1000.0 / fps)
+        self.timestep = 0.1
+
+    def OnClose(event):
+        self.timer.Stop()
+        self.Destroy()
+
+    def OnTimer(self, event):
+        if self.stimulus is not None:
+            predicted = self.testValue()
+
+            self.leye.velocity.x = predicted[0]
+            self.leye.velocity.y = predicted[1]
+            self.reye.velocity.x = predicted[2]
+            self.reye.velocity.y = predicted[3]
+
+            self.leye.position.x += self.timestep * self.leye.velocity.x
+            self.leye.position.y += self.timestep * self.leye.velocity.y
+            self.reye.position.x += self.timestep * self.reye.velocity.x
+            self.reye.position.y += self.timestep * self.reye.velocity.y
+
+            self.leye.position.x = clamp(self.leye.position.x, -0.5, gridDim[0] - 0.5)
+            self.leye.position.y = clamp(self.leye.position.y, -0.5, gridDim[1] - 0.5)
+            self.reye.position.x = clamp(self.reye.position.x, -0.5, gridDim[0] - 0.5)
+            self.reye.position.y = clamp(self.reye.position.y, -0.5, gridDim[1] - 0.5)
+
+            self.Refresh()
 
     def xyToGrid(self, x, y):
         width, height = self.getGridDimensions()
-        if x >= width: x = width - 1
-        if y >= height: y = height - 1
+        x = clamp(x, 0, width - 1)
+        y = clamp(y, 0, height - 1)
         gridX = int(float(x) / width * gridDim[0])
         gridY = int(float(y) / height * gridDim[1])
         return (gridX, gridY)
@@ -51,7 +86,8 @@ class OTGrid(wx.Panel):
         return (x, y)
 
     def testValue(self):
-        return self.ann.run(self.stimulus.toTuple())
+        inputs = self.stimulus.toTuple() + self.leye.position.toTuple() + self.reye.position.toTuple()
+        return self.ann.run(inputs)
 
     def getGridDimensions(self):
         width, height = self.GetSize()
@@ -108,13 +144,8 @@ class OTGrid(wx.Panel):
 
     def OnMouseMovement(self, event):
         (x, y) = self.xyToGrid(event.GetX(), event.GetY())
-        if self.stimulus is None or (self.stimulus.x, self.stimulus.y) != (x, y):
-            self.stimulus = Point(x, y)
-            self.Refresh()
-            predicted = self.testValue()
-            predicted = [(predicted[i] + 1) / 2.0 * (gridDim[i % 2] - 1) for i in range(4)]
-            self.leye.position = Point(predicted[0], predicted[1])
-            self.reye.position = Point(predicted[2], predicted[3])
+        self.stimulus = Point(x, y)
+        self.Refresh()
 
 class OTFrame(wx.Frame):
     def __init__(self, parent, ann, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
