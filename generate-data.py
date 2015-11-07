@@ -7,8 +7,8 @@ num_samples = int(gridDim[0] * gridDim[1] * 0.2)
 if num_samples < 10:
     num_samples = 10
 
-def generate_data(numx, numy):
-    stimulus = (random.randint(0, numx - 1), random.randint(0, numy - 1))
+def generateStimulus(maxx, maxy):
+    stimulus = (random.randint(0, maxx - 1), random.randint(0, maxy - 1))
     return stimulus
 
 def print_header():
@@ -18,13 +18,21 @@ def print_input(left, right):
     data = left + right
     print(' '.join(data))
 
+def scale(x, oldmin, oldmax, newmin, newmax):
+    percent = float(x - oldmin) / float(oldmax - oldmin)
+    return percent * (newmax - newmin) + newmin
+
+def print_sample():
+    input = generateStimulus(gridDim[0], gridDim[1])
+    output = (scale(input[0], 0, gridDim[0], -1, 1),
+              scale(input[1], 0, gridDim[1], -1, 1),
+              scale(input[0], 0, gridDim[0], -1, 1),
+              scale(input[1], 0, gridDim[1], -1, 1))
+    print('%d %d' % input)
+    print('%g %g %g %g' % output)
+
 if __name__ == '__main__':
     random.seed()
     print_header()
     for i in range(num_samples):
-        stimulus = generate_data(gridDim[0], gridDim[1])
-        print('%d %d' % stimulus)
-        scaled_x = 2 * float(stimulus[0]) / gridDim[0] - 1
-        scaled_y = 2 * float(stimulus[1]) / gridDim[1] - 1
-        print("{0} {1} {2} {3}".format(scaled_x, scaled_y,
-                                       scaled_x, scaled_y))
+        print_sample()
