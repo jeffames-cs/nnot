@@ -169,7 +169,6 @@ class OTGrid(wx.Panel):
     def OnMouseMovement(self, event):
         (x, y) = self.xyToGrid(event.GetX(), event.GetY())
         self.stimulus = Point(x, y)
-        self.Refresh()
 
 class OTFrame(wx.Frame):
     def __init__(self, parent, ann, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
