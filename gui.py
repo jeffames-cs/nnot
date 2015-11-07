@@ -10,35 +10,32 @@ windowSize = (600, 600)
 def clamp(x, rangeLow, rangeHigh):
     return max(rangeLow, min(rangeHigh, x))
 
-class Point:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def toTuple(self):
-        return (self.x, self.y)
-
-class Vector:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
 class Eye:
-    def __init__(self, position, velocity):
+    def __init__(self, position, velocity, rangeX, rangeY):
         self.position = position
         self.velocity = velocity
+        self.rangeX = rangeX
+        self.rangeY = rangeY
+
+    def update(self, timestep):
+        self.position = (clamp(self.position[0] + timestep * self.velocity[0], self.rangeX[0], self.rangeX[1]),
+                         clamp(self.position[1] + timestep * self.velocity[1], self.rangeY[0], self.rangeY[1]))
+
+class State:
+    def __init__(self):
+        leyerange = [-0.5, float(gridDim[0]) * 3 / 4]
+        reyerange = [float(gridDim[0]) / 4, gridDim[0] - 0.5]
+        yrange = [-0.5, gridDim[1] - 0.5]
+
+        self.stimulus = None
+        self.leye = Eye((gridDim[0] * 1 / 3, gridDim[1] / 2), (0, 0), leyerange, yrange)
+        self.reye = Eye((gridDim[0] * 2 / 3, gridDim[1] / 2), (0, 0), reyerange, yrange)
 
 class OTGrid(wx.Panel):
-    def __init__(self, parent, stimulus, leye, reye, ann):
+    def __init__(self, parent, state, ann):
         wx.Panel.__init__(self, parent)
-        self.stimulus = stimulus
-        self.leye = leye
-        self.reye = reye
+        self.state = state
         self.ann = ann
-
-        # Limit left/right extremes of visual field to a single eye
-        self.leyerange = [-0.5, float(gridDim[0]) * 3 / 4]
-        self.reyerange = [float(gridDim[0]) / 4, gridDim[0] - 0.5]
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_MOTION, self.OnMouseMovement)
@@ -55,23 +52,14 @@ class OTGrid(wx.Panel):
         self.Destroy()
 
     def OnTimer(self, event):
-        if self.stimulus is not None:
+        if self.state.stimulus is not None:
             predicted = self.testValue()
 
-            self.leye.velocity.x = predicted[0]
-            self.leye.velocity.y = predicted[1]
-            self.reye.velocity.x = predicted[2]
-            self.reye.velocity.y = predicted[3]
+            self.state.leye.velocity = (predicted[0], predicted[1])
+            self.state.reye.velocity = (predicted[2], predicted[3])
 
-            self.leye.position.x += self.timestep * self.leye.velocity.x
-            self.leye.position.y += self.timestep * self.leye.velocity.y
-            self.reye.position.x += self.timestep * self.reye.velocity.x
-            self.reye.position.y += self.timestep * self.reye.velocity.y
-
-            self.leye.position.x = clamp(self.leye.position.x, self.leyerange[0], self.leyerange[1])
-            self.leye.position.y = clamp(self.leye.position.y, -0.5, gridDim[1] - 0.5)
-            self.reye.position.x = clamp(self.reye.position.x, self.reyerange[0], self.reyerange[1])
-            self.reye.position.y = clamp(self.reye.position.y, -0.5, gridDim[1] - 0.5)
+            self.state.leye.update(self.timestep)
+            self.state.reye.update(self.timestep)
 
             self.Refresh()
 
@@ -91,7 +79,7 @@ class OTGrid(wx.Panel):
         return (x, y)
 
     def testValue(self):
-        inputs = self.stimulus.toTuple() + self.leye.position.toTuple() + self.reye.position.toTuple()
+        inputs = self.state.stimulus + self.state.leye.position + self.state.reye.position
         return self.ann.run(inputs)
 
     def getGridDimensions(self):
@@ -113,8 +101,8 @@ class OTGrid(wx.Panel):
         dc.DrawRectangle(0, 0, gridWidth + 1, gridHeight + 1)
 
         xregions = [0,
-                    self.gridToXY(self.reyerange[0], 0)[0],
-                    self.gridToXY(self.leyerange[1], 0)[0],
+                    self.gridToXY(self.state.reye.rangeX[0], 0)[0],
+                    self.gridToXY(self.state.leye.rangeX[1], 0)[0],
                     gridWidth + 1]
 
         # left eye only region
@@ -148,27 +136,26 @@ class OTGrid(wx.Panel):
         radius = 0.3 * min(cellWidth, cellHeight)
         dc.SetPen(wx.Pen(color, 1))
         dc.SetBrush(wx.Brush(color))
-        (x, y) = self.gridToXY(position.x, position.y)
+        (x, y) = self.gridToXY(position[0], position[1])
         dc.DrawCircle(x, y, radius)
 
     def drawEyes(self, dc):
-        self.drawPointInGrid(dc, self.leye.position, wx.GREEN)
-        self.drawPointInGrid(dc, self.reye.position, wx.BLUE)
+        self.drawPointInGrid(dc, self.state.leye.position, wx.GREEN)
+        self.drawPointInGrid(dc, self.state.reye.position, wx.BLUE)
 
     def drawStimulus(self, dc):
-        self.drawPointInGrid(dc, self.stimulus, wx.RED)
+        self.drawPointInGrid(dc, self.state.stimulus, wx.RED)
 
     def OnPaint(self, event):
         dc = wx.PaintDC(self)
         dc.Clear()
         self.drawGrid(dc)
-        if self.stimulus is not None:
+        if self.state.stimulus is not None:
             self.drawStimulus(dc)
         self.drawEyes(dc)
 
     def OnMouseMovement(self, event):
-        (x, y) = self.xyToGrid(event.GetX(), event.GetY())
-        self.stimulus = Point(x, y)
+        self.state.stimulus = self.xyToGrid(event.GetX(), event.GetY())
 
 class OTFrame(wx.Frame):
     def __init__(self, parent, ann, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
@@ -180,11 +167,9 @@ class OTFrame(wx.Frame):
         menubar = wx.MenuBar()
         self.SetMenuBar(menubar)
 
-        stimulus = None
-        leye = Eye(Point(gridDim[0] * 1 / 3, gridDim[1] / 2), Vector(0, 0))
-        reye = Eye(Point(gridDim[0] * 2 / 3, gridDim[1] / 2), Vector(0, 0))
+        state = State()
 
-        grid = OTGrid(panel, stimulus, leye, reye, ann)
+        grid = OTGrid(panel, state, ann)
         grid.SetBackgroundColour('#333333')
         gridBorder = 20
 
