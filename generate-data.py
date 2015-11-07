@@ -24,10 +24,10 @@ def scale(x, oldmin, oldmax, newmin, newmax):
 
 def print_sample():
     input = generateStimulus(gridDim[0], gridDim[1])
-    output = (scale(input[0], 0, gridDim[0], -1, 1),
-              scale(input[1], 0, gridDim[1], -1, 1),
-              scale(input[0], 0, gridDim[0], -1, 1),
-              scale(input[1], 0, gridDim[1], -1, 1))
+    output = (scale(input[0], 0, gridDim[0] - 1, -1, 1),
+              scale(input[1], 0, gridDim[1] - 1, -1, 1),
+              scale(input[0], 0, gridDim[0] - 1, -1, 1),
+              scale(input[1], 0, gridDim[1] - 1, -1, 1))
     print('%d %d' % input)
     print('%g %g %g %g' % output)
 

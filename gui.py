@@ -105,7 +105,7 @@ class OTGrid(wx.Panel):
             self.stimulus = Point(x, y)
             self.Refresh()
             predicted = self.testValue()
-            predicted = [(predicted[i] + 1) / 2.0 * gridDim[i % 2] for i in range(4)]
+            predicted = [(predicted[i] + 1) / 2.0 * (gridDim[i % 2] - 1) for i in range(4)]
             self.leye.position = Point(predicted[0], predicted[1])
             self.reye.position = Point(predicted[2], predicted[3])
 
