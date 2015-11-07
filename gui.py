@@ -111,6 +111,25 @@ class OTGrid(wx.Panel):
         gridWidth, gridHeight = self.getGridDimensions()
         dc.SetBrush(wx.Brush(wx.Colour(0xaa, 0xaa, 0xaa)))
         dc.DrawRectangle(0, 0, gridWidth + 1, gridHeight + 1)
+
+        xregions = [0,
+                    self.gridToXY(self.reyerange[0], 0)[0],
+                    self.gridToXY(self.leyerange[1], 0)[0],
+                    gridWidth + 1]
+
+        # left eye only region
+        dc.SetPen(wx.Pen(wx.BLACK, style=wx.TRANSPARENT))
+        dc.SetBrush(wx.Brush(wx.Colour(0xbb, 0xfc, 0xc0)))
+        dc.DrawRectangle(xregions[0], 0, xregions[1], gridHeight + 1)
+
+        # both eyes region
+        dc.SetBrush(wx.Brush(wx.Colour(0xbb, 0xfc, 0xfc)))
+        dc.DrawRectangle(xregions[1], 0, xregions[2] - xregions[1], gridHeight + 1)
+
+        # right eye only region
+        dc.SetBrush(wx.Brush(wx.Colour(0xbb, 0xd9, 0xfc)))
+        dc.DrawRectangle(xregions[2], 0, xregions[3] - xregions[2], gridHeight + 1)
+
         (cellWidth, cellHeight) = self.getCellDimensions()
         if min(cellWidth, cellHeight) < 50:
             lineWidth = 1
