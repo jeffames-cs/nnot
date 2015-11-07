@@ -1,6 +1,8 @@
 # nnot
 Neural network for object tracking
 
+![nnot screenshot](/images/nnot.png?raw=true "nnot screenshot")
+
 ## Dependencies
 
 Training the neural network depends on these libraries:
