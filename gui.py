@@ -61,7 +61,13 @@ class OTGrid(wx.Panel):
     def drawGrid(self, dc):
         width, height = self.GetSize()
         (cellWidth, cellHeight) = self.getCellDimensions()
-        dc.SetPen(wx.Pen(wx.BLACK, 3))
+        if min(cellWidth, cellHeight) < 50:
+            lineWidth = 1
+        elif min(cellWidth, cellHeight) < 100:
+            lineWidth = 2
+        else:
+            lineWidth = 3
+        dc.SetPen(wx.Pen(wx.BLACK, lineWidth))
         for i in range(0, width, cellWidth):
             dc.DrawLine(i, 0, i, height)
         dc.DrawLine(width, 0, width, height)
@@ -72,7 +78,7 @@ class OTGrid(wx.Panel):
     def drawPointInGrid(self, dc, position, color):
         (cellWidth, cellHeight) = self.getCellDimensions()
         radius = 0.3 * min(cellWidth, cellHeight)
-        dc.SetPen(wx.Pen(color, 3))
+        dc.SetPen(wx.Pen(color, 1))
         dc.SetBrush(wx.Brush(color))
         (x, y) = self.gridToXY(position.x, position.y)
         dc.DrawCircle(x, y, radius)
