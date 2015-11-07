@@ -3,12 +3,21 @@ Neural network for object tracking
 
 ## Dependencies
 
-NNOT depends on the following libraries:
+Training the neural network depends on these libraries:
+
+* pyfann (included in repo)
+
+The nnot GUI depends on these libraries:
 
 * wxPython
 
-## Running NNOT
+## Running nnot
 
-To run the neural network, execute the following:
+To generate data sets and train the network, run the following:
 
-    ./ann.py
+    make clean
+    make
+
+To show the GUI, run the following:
+
+    ./gui.py
