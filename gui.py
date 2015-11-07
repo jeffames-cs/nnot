@@ -35,6 +35,11 @@ class OTGrid(wx.Panel):
         self.leye = leye
         self.reye = reye
         self.ann = ann
+
+        # Limit left/right extremes of visual field to a single eye
+        self.leyerange = [-0.5, float(gridDim[0]) * 3 / 4]
+        self.reyerange = [float(gridDim[0]) / 4, gridDim[0] - 0.5]
+
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_MOTION, self.OnMouseMovement)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
@@ -63,9 +68,9 @@ class OTGrid(wx.Panel):
             self.reye.position.x += self.timestep * self.reye.velocity.x
             self.reye.position.y += self.timestep * self.reye.velocity.y
 
-            self.leye.position.x = clamp(self.leye.position.x, -0.5, gridDim[0] - 0.5)
+            self.leye.position.x = clamp(self.leye.position.x, self.leyerange[0], self.leyerange[1])
             self.leye.position.y = clamp(self.leye.position.y, -0.5, gridDim[1] - 0.5)
-            self.reye.position.x = clamp(self.reye.position.x, -0.5, gridDim[0] - 0.5)
+            self.reye.position.x = clamp(self.reye.position.x, self.reyerange[0], self.reyerange[1])
             self.reye.position.y = clamp(self.reye.position.y, -0.5, gridDim[1] - 0.5)
 
             self.Refresh()
