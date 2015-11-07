@@ -101,7 +101,6 @@ class OTGrid(wx.Panel):
     def OnMouseMovement(self, event):
         (x, y) = self.xyToGrid(event.GetX(), event.GetY())
         if self.stimulus is None or (self.stimulus.x, self.stimulus.y) != (x, y):
-            print('New stimulus: %d, %d' % (x, y))
             self.stimulus = Point(x, y)
             self.Refresh()
             predicted = self.testValue()
