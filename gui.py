@@ -52,10 +52,15 @@ class OTGrid(wx.Panel):
     def testValue(self):
         return self.ann.run(self.stimulus.toTuple())
 
-    def drawGrid(self, dc):
+    def getCellDimensions(self):
         width, height = self.GetSize()
         cellWidth = int(float(width) / gridDim[0])
         cellHeight = int(float(height) / gridDim[1])
+        return (cellWidth, cellHeight)
+
+    def drawGrid(self, dc):
+        width, height = self.GetSize()
+        (cellWidth, cellHeight) = self.getCellDimensions()
         dc.SetPen(wx.Pen(wx.BLACK, 3))
         for i in range(0, width, cellWidth):
             dc.DrawLine(i, 0, i, height)
@@ -65,10 +70,8 @@ class OTGrid(wx.Panel):
         dc.DrawLine(0, height, width, height)
 
     def drawPointInGrid(self, dc, position, color):
-        width, height = self.GetSize()
-        cellWidth = int(float(width) / gridDim[0])
-        cellHeight = int(float(height) / gridDim[1])
-        radius = 0.25 * min(cellWidth, cellHeight)
+        (cellWidth, cellHeight) = self.getCellDimensions()
+        radius = 0.3 * min(cellWidth, cellHeight)
         dc.SetPen(wx.Pen(color, 3))
         dc.SetBrush(wx.Brush(color))
         (x, y) = self.gridToXY(position.x, position.y)
