@@ -1,157 +1,138 @@
 #!/usr/bin/env python
 
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-
+import wx
 from pyfann import libfann
 from nott_params import *
 
 nn_file    = "objtrack.net"
 windowSize = (600, 600)
 
-class Circle(QWidget):
-    radius = 15
-
-    def __init__(self, x, y, color, parent=None):
-        QWidget.__init__(self, parent)
+class Point:
+    def __init__(self, x, y):
         self.x = x
         self.y = y
-        self.color = color
-        self.setMouseTracking(True)
 
-    def paintEvent(self, event):
-        paint = QPainter()
-        paint.begin(self)
-        paint.setRenderHint(QPainter.Antialiasing)
-        paint.setBrush(self.color)
-        paint.setPen(self.color)
-        paint.drawEllipse(self.x, self.y, self.radius, self.radius)
-        paint.end()
+    def toTuple(self):
+        return (self.x, self.y)
 
-class ObjectLabel(QLabel):
-    def __init__(self, parent = None):
-        super(ObjectLabel, self).__init__(parent)
-        self.setAlignment(Qt.AlignCenter)
-        self.setText('(,)')
-        self.setMouseTracking(True)
+class Vector:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
-class ObjectGrid(QWidget):
-    def __init__(self, parent = None):
-        super(ObjectGrid, self).__init__(parent)
-        self.setMouseTracking(True)
+class Eye:
+    def __init__(self, position, velocity):
+        self.position = position
+        self.velocity = velocity
 
-    def paintEvent(self, event):
-        qp = QPainter()
-        qp.begin(self)
-        qp.setPen(QPen(Qt.black, 3, Qt.SolidLine))
-        qp.setBrush(Qt.black)
-        cellWidth = int(float(self.width()) / gridDim[0])
-        cellHeight = int(float(self.height()) / gridDim[1])
-        for i in range(0, self.width(), cellWidth):
-            qp.drawLine(i, 0, i, self.height())
-        qp.drawLine(self.width(), 0, self.width(), self.height())
-        for j in range(0, self.height(), cellHeight):
-            qp.drawLine(0, j, self.width(), j)
-        qp.drawLine(0, self.height(), self.width(), self.height())
-        qp.end()
-
-class ObjectTracker(QWidget):
-    def __init__(self, ann, parent = None):
-        super(ObjectTracker, self).__init__(parent)
-        self.stimulus = (0, 0)
-        self.predicted = (0, 0, 0, 0)
+class OTGrid(wx.Panel):
+    def __init__(self, parent, stimulus, leye, reye, ann):
+        wx.Panel.__init__(self, parent)
+        self.stimulus = stimulus
+        self.leye = leye
+        self.reye = reye
         self.ann = ann
-
-        self.setStyleSheet("background-color:#aaa; color:#fff;")
-        self.resize(int(0.9 * parent.width()), int(0.9 * parent.height()))
-        self.setMouseTracking(True)
-
-        self.positionLabel = ObjectLabel(self)
-        self.positionLabel.setParent(self)
-
-        self.stimulusPoint = Circle(0, 0, Qt.red)
-        self.stimulusPoint.setParent(self)
-
-        self.leftEyePoint = Circle(0, 0, Qt.blue)
-        self.leftEyePoint.setParent(self)
-
-        self.rightEyePoint = Circle(0, 0, Qt.green)
-        self.rightEyePoint.setParent(self)
-
-        self.grid = ObjectGrid()
-        self.grid.setParent(self)
-
-        self.setTextLabelPosition()
+        self.Bind(wx.EVT_PAINT, self.OnPaint)
+        self.Bind(wx.EVT_MOTION, self.OnMouseMovement)
 
     def xyToGrid(self, x, y):
-        gridX = int(float(x) / self.width() * gridDim[0])
-        gridY = int(float(y) / self.height() * gridDim[1])
+        width, height = self.GetSize()
+        gridX = int(float(x) / width * gridDim[0])
+        gridY = int(float(y) / height * gridDim[1])
         return (gridX, gridY)
 
     def gridToXY(self, gridX, gridY):
-        halfCellWidth = self.width() / gridDim[0] / 2
-        halfCellHeight = self.height() / gridDim[1] / 2
-        x = float(gridX) / gridDim[0] * self.width() + halfCellWidth
-        y = float(gridY) / gridDim[1] * self.height() + halfCellHeight
+        width, height = self.GetSize()
+        halfCellWidth = width / gridDim[0] / 2
+        halfCellHeight = height / gridDim[1] / 2
+        x = float(gridX) / gridDim[0] * width + halfCellWidth
+        y = float(gridY) / gridDim[1] * height + halfCellHeight
         return (x, y)
 
     def testValue(self):
-        return self.ann.run(self.stimulus)
+        return self.ann.run(self.stimulus.toTuple())
 
-    def mouseMoveEvent(self, event):
-        (x, y) = self.xyToGrid(event.x(), event.y())
-        if self.stimulus != (x, y):
-            self.stimulus = (x, y)
-            self.predicted = self.testValue()
-            self.setTextLabelPosition()
+    def drawGrid(self, dc):
+        width, height = self.GetSize()
+        cellWidth = int(float(width) / gridDim[0])
+        cellHeight = int(float(height) / gridDim[1])
+        dc.SetPen(wx.Pen(wx.BLACK, 3))
+        for i in range(0, width, cellWidth):
+            dc.DrawLine(i, 0, i, height)
+        dc.DrawLine(width, 0, width, height)
+        for j in range(0, height, cellHeight):
+            dc.DrawLine(0, j, width, j)
+        dc.DrawLine(0, height, width, height)
 
-            (stimX, stimY) = self.gridToXY(x, y)
-            self.stimulusPoint.move(stimX - self.stimulusPoint.radius/2, stimY - self.stimulusPoint.radius/2)
+    def drawPointInGrid(self, dc, position, color):
+        width, height = self.GetSize()
+        cellWidth = int(float(width) / gridDim[0])
+        cellHeight = int(float(height) / gridDim[1])
+        radius = 0.25 * min(cellWidth, cellHeight)
+        dc.SetPen(wx.Pen(color, 3))
+        dc.SetBrush(wx.Brush(color))
+        (x, y) = self.gridToXY(position.x, position.y)
+        dc.DrawCircle(x, y, radius)
 
-            left = self.gridToXY(((self.predicted[0] + 1) / 2.0) * gridDim[0],
-                                 ((self.predicted[1] + 1) / 2.0) * gridDim[1])
-            right = self.gridToXY(((self.predicted[2] + 1) / 2.0) * gridDim[0],
-                                  ((self.predicted[3] + 1) / 2.0) * gridDim[1])
+    def drawEyes(self, dc):
+        self.drawPointInGrid(dc, self.leye.position, wx.GREEN)
+        self.drawPointInGrid(dc, self.reye.position, wx.BLUE)
 
-            self.leftEyePoint.move(left[0] - self.leftEyePoint.radius/2,
-                                   left[1] - self.leftEyePoint.radius/2)
-            self.rightEyePoint.move(right[0] - self.rightEyePoint.radius/2,
-                                    right[1] - self.rightEyePoint.radius/2)
-        QWidget.mouseMoveEvent(self, event)
+    def drawStimulus(self, dc):
+        self.drawPointInGrid(dc, self.stimulus, wx.RED)
 
-    def resizeEvent(self, event):
-        self.positionLabel.resize(self.width(), self.height())
-        self.grid.resize(self.width(), self.height())
-        QWidget.resizeEvent(self, event)
+    def OnPaint(self, event):
+        dc = wx.PaintDC(self)
+        dc.Clear()
+        self.drawGrid(dc)
+        if self.stimulus is not None:
+            self.drawStimulus(dc)
+        self.drawEyes(dc)
 
-    def setTextLabelPosition(self):
-        self.positionLabel.setText('(%d, %d), (%0.2g, %0.2g), (%0.2g, %0.2g)' %
-                                   (self.stimulus[0], self.stimulus[1],
-                                    self.predicted[0], self.predicted[1], self.predicted[2], self.predicted[3]))
+    def OnMouseMovement(self, event):
+        (x, y) = self.xyToGrid(event.GetX(), event.GetY())
+        if self.stimulus is None or (self.stimulus.x, self.stimulus.y) != (x, y):
+            print('New stimulus: %d, %d' % (x, y))
+            self.stimulus = Point(x, y)
+            self.Refresh()
+            predicted = self.testValue()
+            predicted = [(predicted[i] + 1) / 2.0 * gridDim[i % 2] for i in range(4)]
+            self.leye.position = Point(predicted[0], predicted[1])
+            self.reye.position = Point(predicted[2], predicted[3])
 
-class Form(QWidget):
-    def __init__(self, ann, parent = None):
-        super(Form, self).__init__(parent)
-        self.objTracker = ObjectTracker(ann, self)
-        self.resize(windowSize[0], windowSize[1])
+class OTFrame(wx.Frame):
+    def __init__(self, parent, ann, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
+        wx.Frame.__init__(self, None, id, title, pos, size, style, name)
+        panel = wx.Panel(self)
+        panel.SetFocus()
+        self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUp)
 
-        layout = QHBoxLayout()
-        layout.addWidget(self.objTracker)
-        layout.setSpacing(0)
-        self.setLayout(layout)
+        menubar = wx.MenuBar()
+        self.SetMenuBar(menubar)
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_Escape:
-            self.close()
+        stimulus = None
+        leye = Eye(Point(4, 5), Vector(0, 0))
+        reye = Eye(Point(6, 5), Vector(0, 0))
+
+        grid = OTGrid(self, stimulus, leye, reye, ann)
+        grid.SetSize((0.9 * size[0], 0.9 * size[1]))
+
+        box = wx.BoxSizer(wx.VERTICAL)
+        box.Add(grid, 1, wx.ALL)
+        panel.SetSizer(box)
+
+    def OnKeyUp(self, event):
+        keyCode = event.GetKeyCode()
+        if keyCode == wx.WXK_ESCAPE:
+            self.Close()
 
 if __name__ == '__main__':
-    import sys
+    app = wx.App()
 
     ann = libfann.neural_net()
     ann.create_from_file(nn_file)
 
-    app = QApplication(sys.argv)
-    widget = Form(ann)
-    widget.show()
-    sys.exit(app.exec_())
+    frame = OTFrame(None, ann, size=windowSize, title='Neural network object tracker')
+    frame.Show()
+
+    app.MainLoop()
