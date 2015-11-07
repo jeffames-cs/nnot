@@ -4,6 +4,8 @@ import random
 from nott_params import *
 
 num_samples = int(gridDim[0] * gridDim[1] * 0.2)
+if num_samples < 10:
+    num_samples = 10
 
 def generate_data(numx, numy):
     stimulus = (random.randint(0, numx - 1), random.randint(0, numy - 1))

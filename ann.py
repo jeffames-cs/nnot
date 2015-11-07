@@ -5,7 +5,7 @@ from nott_params import *
 
 connection_rate = 1
 learning_rate   = 0.7
-num_hidden      = 20
+num_hidden      = max(5, min(100, (gridDim[0] + gridDim[1]) / 2))
 
 desired_error              = 0.0001
 max_iterations             = 100000
