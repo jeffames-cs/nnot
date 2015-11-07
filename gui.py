@@ -36,21 +36,28 @@ class OTGrid(wx.Panel):
         self.Bind(wx.EVT_MOTION, self.OnMouseMovement)
 
     def xyToGrid(self, x, y):
-        width, height = self.GetSize()
+        width, height = self.getGridDimensions()
+        if x >= width: x = width - 1
+        if y >= height: y = height - 1
         gridX = int(float(x) / width * gridDim[0])
         gridY = int(float(y) / height * gridDim[1])
         return (gridX, gridY)
 
     def gridToXY(self, gridX, gridY):
-        width, height = self.GetSize()
-        halfCellWidth = width / gridDim[0] / 2
-        halfCellHeight = height / gridDim[1] / 2
-        x = float(gridX) / gridDim[0] * width + halfCellWidth
-        y = float(gridY) / gridDim[1] * height + halfCellHeight
+        width, height = self.getGridDimensions()
+        cellWidth, cellHeight = self.getCellDimensions()
+        x = float(gridX) / gridDim[0] * width + cellWidth / 2
+        y = float(gridY) / gridDim[1] * height + cellHeight / 2
         return (x, y)
 
     def testValue(self):
         return self.ann.run(self.stimulus.toTuple())
+
+    def getGridDimensions(self):
+        width, height = self.GetSize()
+        cellWidth = int(float(width) / gridDim[0])
+        cellHeight = int(float(height) / gridDim[1])
+        return (cellWidth * gridDim[0], cellHeight * gridDim[1])
 
     def getCellDimensions(self):
         width, height = self.GetSize()
@@ -60,6 +67,9 @@ class OTGrid(wx.Panel):
 
     def drawGrid(self, dc):
         width, height = self.GetSize()
+        gridWidth, gridHeight = self.getGridDimensions()
+        dc.SetBrush(wx.Brush(wx.Colour(0xaa, 0xaa, 0xaa)))
+        dc.DrawRectangle(0, 0, gridWidth + 1, gridHeight + 1)
         (cellWidth, cellHeight) = self.getCellDimensions()
         if min(cellWidth, cellHeight) < 50:
             lineWidth = 1
@@ -68,12 +78,10 @@ class OTGrid(wx.Panel):
         else:
             lineWidth = 3
         dc.SetPen(wx.Pen(wx.BLACK, lineWidth))
-        for i in range(0, width, cellWidth):
-            dc.DrawLine(i, 0, i, height)
-        dc.DrawLine(width, 0, width, height)
-        for j in range(0, height, cellHeight):
-            dc.DrawLine(0, j, width, j)
-        dc.DrawLine(0, height, width, height)
+        for i in range(gridDim[0] + 1):
+            dc.DrawLine(i * cellWidth, 0, i * cellWidth, cellHeight * gridDim[1])
+        for j in range(gridDim[1] + 1):
+            dc.DrawLine(0, j * cellHeight, cellWidth * gridDim[0], j * cellHeight)
 
     def drawPointInGrid(self, dc, position, color):
         (cellWidth, cellHeight) = self.getCellDimensions()
@@ -111,6 +119,7 @@ class OTGrid(wx.Panel):
 class OTFrame(wx.Frame):
     def __init__(self, parent, ann, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
         wx.Frame.__init__(self, None, id, title, pos, size, style, name)
+
         panel = wx.Panel(self)
         panel.SetBackgroundColour('#333333')
 
@@ -118,18 +127,29 @@ class OTFrame(wx.Frame):
         self.SetMenuBar(menubar)
 
         stimulus = None
-        leye = Eye(Point(4, 5), Vector(0, 0))
-        reye = Eye(Point(6, 5), Vector(0, 0))
+        leye = Eye(Point(gridDim[0] * 1 / 3, gridDim[1] / 2), Vector(0, 0))
+        reye = Eye(Point(gridDim[0] * 2 / 3, gridDim[1] / 2), Vector(0, 0))
 
         grid = OTGrid(panel, stimulus, leye, reye, ann)
-        grid.SetBackgroundColour('#aaaaaa')
+        grid.SetBackgroundColour('#333333')
+        gridBorder = 20
 
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(grid, 1, wx.ALL|wx.EXPAND, 20)
+        vbox.Add(grid, 1, wx.ALL|wx.EXPAND, gridBorder)
         panel.SetSizer(vbox)
 
         self.Bind(wx.EVT_CHAR_HOOK, self.OnKeyUp)
         self.Show()
+
+        # Find a good size close to the requested one
+        xsize = int(float(size[0]) / gridDim[0]) * gridDim[0] + 2 * gridBorder
+        ysize = int(float(size[1]) / gridDim[1]) * gridDim[1] + 2 * gridBorder
+
+        # Hack to account for title bar size
+        winSize = self.GetSize()
+        titleBarHeight = winSize[1] - panel.GetSize()[1]
+
+        self.SetSize((xsize, ysize + titleBarHeight))
 
     def OnKeyUp(self, event):
         keyCode = event.GetKeyCode()
