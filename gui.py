@@ -40,11 +40,6 @@ class OTGrid(wx.Panel):
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_MOTION, self.OnMouseMovement)
-        self.Bind(wx.EVT_CLOSE, self.OnClose)
-
-    def OnClose(event):
-        self.timer.Stop()
-        self.Destroy()
 
     def xyToGrid(self, x, y):
         width, height = self.getGridDimensions()
