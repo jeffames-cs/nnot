@@ -32,36 +32,17 @@ class State:
         self.reye = Eye((gridDim[0] * 2 / 3, gridDim[1] / 2), (0, 0), reyerange, yrange)
 
 class OTGrid(wx.Panel):
-    def __init__(self, parent, state, ann):
+    def __init__(self, parent, state):
         wx.Panel.__init__(self, parent)
         self.state = state
-        self.ann = ann
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_MOTION, self.OnMouseMovement)
         self.Bind(wx.EVT_CLOSE, self.OnClose)
 
-        self.timer = wx.Timer(self)
-        self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
-        fps = 60
-        self.timer.Start(1000.0 / fps)
-        self.timestep = 0.1
-
     def OnClose(event):
         self.timer.Stop()
         self.Destroy()
-
-    def OnTimer(self, event):
-        if self.state.stimulus is not None:
-            predicted = self.testValue()
-
-            self.state.leye.velocity = (predicted[0], predicted[1])
-            self.state.reye.velocity = (predicted[2], predicted[3])
-
-            self.state.leye.update(self.timestep)
-            self.state.reye.update(self.timestep)
-
-            self.Refresh()
 
     def xyToGrid(self, x, y):
         width, height = self.getGridDimensions()
@@ -77,10 +58,6 @@ class OTGrid(wx.Panel):
         x = float(gridX) / gridDim[0] * width + cellWidth / 2
         y = float(gridY) / gridDim[1] * height + cellHeight / 2
         return (x, y)
-
-    def testValue(self):
-        inputs = self.state.stimulus + self.state.leye.position + self.state.reye.position
-        return self.ann.run(inputs)
 
     def getGridDimensions(self):
         width, height = self.GetSize()
@@ -161,15 +138,17 @@ class OTFrame(wx.Frame):
     def __init__(self, parent, ann, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
         wx.Frame.__init__(self, None, id, title, pos, size, style, name)
 
+        self.ann = ann
+
         panel = wx.Panel(self)
         panel.SetBackgroundColour('#333333')
 
         menubar = wx.MenuBar()
         self.SetMenuBar(menubar)
 
-        state = State()
+        self.state = State()
 
-        grid = OTGrid(panel, state, ann)
+        grid = OTGrid(panel, self.state)
         grid.SetBackgroundColour('#333333')
         gridBorder = 20
 
@@ -190,10 +169,31 @@ class OTFrame(wx.Frame):
 
         self.SetSize((xsize, ysize + titleBarHeight))
 
+        self.timer = wx.Timer(self)
+        self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
+        self.timer.Start(1000.0 / 60) # 60 fps
+        self.timestep = 0.1
+
     def OnKeyUp(self, event):
         keyCode = event.GetKeyCode()
         if keyCode == wx.WXK_ESCAPE:
             self.Close()
+
+    def runModel(self):
+        inputs = self.state.stimulus + self.state.leye.position + self.state.reye.position
+        return self.ann.run(inputs)
+
+    def OnTimer(self, event):
+        if self.state.stimulus is not None:
+            predicted = self.runModel()
+
+            self.state.leye.velocity = (predicted[0], predicted[1])
+            self.state.reye.velocity = (predicted[2], predicted[3])
+
+            self.state.leye.update(self.timestep)
+            self.state.reye.update(self.timestep)
+
+            self.Refresh()
 
 if __name__ == '__main__':
     ann = libfann.neural_net()
