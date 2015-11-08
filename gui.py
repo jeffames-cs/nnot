@@ -18,8 +18,10 @@ class Eye:
         self.rangeY = rangeY
 
     def update(self, timestep):
-        self.position = (clamp(self.position[0] + timestep * self.velocity[0], self.rangeX[0], self.rangeX[1]),
-                         clamp(self.position[1] + timestep * self.velocity[1], self.rangeY[0], self.rangeY[1]))
+        newX = self.position[0] + timestep * self.velocity[0]
+        newY = self.position[1] + timestep * self.velocity[1]
+        self.position = (clamp(newX, self.rangeX[0], self.rangeX[1]),
+                         clamp(newY, self.rangeY[0], self.rangeY[1]))
 
 class State:
     def __init__(self):
@@ -135,10 +137,10 @@ class OTGrid(wx.Panel):
         self.state.stimulus = self.xyToGrid(event.GetX(), event.GetY())
 
 class OTFrame(wx.Frame):
-    def __init__(self, parent, ann, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
+    def __init__(self, parent, model, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
         wx.Frame.__init__(self, None, id, title, pos, size, style, name)
 
-        self.ann = ann
+        self.model = model
 
         panel = wx.Panel(self)
         panel.SetBackgroundColour('#333333')
@@ -181,14 +183,14 @@ class OTFrame(wx.Frame):
 
     def runModel(self):
         inputs = self.state.stimulus + self.state.leye.position + self.state.reye.position
-        return self.ann.run(inputs)
+        return self.model.run(inputs)
 
     def OnTimer(self, event):
         if self.state.stimulus is not None:
-            predicted = self.runModel()
+            output = self.runModel()
 
-            self.state.leye.velocity = (predicted[0], predicted[1])
-            self.state.reye.velocity = (predicted[2], predicted[3])
+            self.state.leye.velocity = (output[0], output[1])
+            self.state.reye.velocity = (output[2], output[3])
 
             self.state.leye.update(self.timestep)
             self.state.reye.update(self.timestep)
@@ -196,9 +198,9 @@ class OTFrame(wx.Frame):
             self.Refresh()
 
 if __name__ == '__main__':
-    ann = libfann.neural_net()
-    ann.create_from_file(nn_file)
+    neuralNet = libfann.neural_net()
+    neuralNet.create_from_file(nn_file)
 
     app = wx.App()
-    OTFrame(None, ann, size=windowSize, title='Neural network object tracker')
+    OTFrame(None, neuralNet, size=windowSize, title='Neural network object tracker')
     app.MainLoop()
