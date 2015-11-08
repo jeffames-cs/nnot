@@ -2,7 +2,7 @@
 
 import wx
 from pyfann import libfann
-from nott_params import *
+from nnot_params import *
 
 nn_file    = "objtrack.net"
 windowSize = (600, 600)

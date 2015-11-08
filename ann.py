@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 from pyfann import libfann
-from nott_params import *
+from nnot_params import *
 
 connection_rate = 1
 learning_rate   = 0.7

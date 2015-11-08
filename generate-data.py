@@ -2,7 +2,7 @@
 
 import math
 import random
-from nott_params import *
+from nnot_params import *
 
 num_samples = int(gridDim[0] * gridDim[1] * 10)
 if num_samples < 10:
