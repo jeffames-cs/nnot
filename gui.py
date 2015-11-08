@@ -23,8 +23,8 @@ class Eye:
 
 class State:
     def __init__(self):
-        leyerange = [-0.5, float(gridDim[0]) * 3 / 4]
-        reyerange = [float(gridDim[0]) / 4, gridDim[0] - 0.5]
+        leyerange = [-0.5, float(gridDim[0]) * 3 / 4 - 0.5]
+        reyerange = [float(gridDim[0]) / 4 - 0.5, gridDim[0] - 0.5]
         yrange = [-0.5, gridDim[1] - 0.5]
 
         self.stimulus = None
