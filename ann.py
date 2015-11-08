@@ -7,7 +7,7 @@ connection_rate = 1
 learning_rate   = 0.7
 num_hidden      = max(5, min(100, (gridDim[0] + gridDim[1]) / 2))
 
-desired_error              = 0.0001
+desired_error              = 0.0005
 max_iterations             = 100000
 iterations_between_reports = 200
 
