@@ -24,14 +24,20 @@ class Eye:
                          clamp(newY, self.rangeY[0], self.rangeY[1]))
 
 class State:
-    def __init__(self):
+    def __init__(self, predictor):
         leyerange = [-0.5, float(gridDim[0]) * 3 / 4 - 0.5]
         reyerange = [float(gridDim[0]) / 4 - 0.5, gridDim[0] - 0.5]
         yrange = [-0.5, gridDim[1] - 0.5]
 
+        self.predictor = predictor
+
         self.stimulus = None
         self.leye = Eye((gridDim[0] * 1 / 3, gridDim[1] / 2), (0, 0), leyerange, yrange)
         self.reye = Eye((gridDim[0] * 2 / 3, gridDim[1] / 2), (0, 0), reyerange, yrange)
+
+    def predict(self):
+        inputs = self.stimulus + self.leye.position + self.reye.position
+        return self.predictor.run(inputs)
 
 class OTGrid(wx.Panel):
     def __init__(self, parent, state):
@@ -132,10 +138,9 @@ class OTGrid(wx.Panel):
         self.state.stimulus = self.xyToGrid(event.GetX(), event.GetY())
 
 class OTFrame(wx.Frame):
-    def __init__(self, parent, model, state, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
+    def __init__(self, parent, state, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
         wx.Frame.__init__(self, None, id, title, pos, size, style, name)
 
-        self.model = model
         self.state = state
 
         panel = wx.Panel(self)
@@ -175,13 +180,9 @@ class OTFrame(wx.Frame):
         if keyCode == wx.WXK_ESCAPE:
             self.Close()
 
-    def runModel(self):
-        inputs = self.state.stimulus + self.state.leye.position + self.state.reye.position
-        return self.model.run(inputs)
-
     def OnTimer(self, event):
         if self.state.stimulus is not None:
-            output = self.runModel()
+            output = self.state.predict()
 
             self.state.leye.velocity = (output[0], output[1])
             self.state.reye.velocity = (output[2], output[3])
@@ -195,8 +196,8 @@ if __name__ == '__main__':
     neuralNet = libfann.neural_net()
     neuralNet.create_from_file(nn_file)
 
-    state = State()
+    state = State(neuralNet)
 
     app = wx.App()
-    OTFrame(None, neuralNet, state, size=windowSize, title='Neural network object tracker')
+    OTFrame(None, state, size=windowSize, title='Neural network object tracker')
     app.MainLoop()
