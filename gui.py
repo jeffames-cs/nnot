@@ -23,7 +23,7 @@ class Eye:
         self.position = (clamp(newX, self.rangeX[0], self.rangeX[1]),
                          clamp(newY, self.rangeY[0], self.rangeY[1]))
 
-class State:
+class Model:
     def __init__(self, predictor):
         leyerange = [-0.5, float(gridDim[0]) * 3 / 4 - 0.5]
         reyerange = [float(gridDim[0]) / 4 - 0.5, gridDim[0] - 0.5]
@@ -40,9 +40,9 @@ class State:
         return self.predictor.run(inputs)
 
 class OTGrid(wx.Panel):
-    def __init__(self, parent, state):
+    def __init__(self, parent, model):
         wx.Panel.__init__(self, parent)
-        self.state = state
+        self.model = model
 
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_MOTION, self.OnMouseMovement)
@@ -81,8 +81,8 @@ class OTGrid(wx.Panel):
         dc.DrawRectangle(0, 0, gridWidth + 1, gridHeight + 1)
 
         xregions = [0,
-                    self.gridToXY(self.state.reye.rangeX[0], 0)[0],
-                    self.gridToXY(self.state.leye.rangeX[1], 0)[0],
+                    self.gridToXY(self.model.reye.rangeX[0], 0)[0],
+                    self.gridToXY(self.model.leye.rangeX[1], 0)[0],
                     gridWidth + 1]
 
         # left eye only region
@@ -120,28 +120,28 @@ class OTGrid(wx.Panel):
         dc.DrawCircle(x, y, radius)
 
     def drawEyes(self, dc):
-        self.drawPointInGrid(dc, self.state.leye.position, wx.GREEN)
-        self.drawPointInGrid(dc, self.state.reye.position, wx.BLUE)
+        self.drawPointInGrid(dc, self.model.leye.position, wx.GREEN)
+        self.drawPointInGrid(dc, self.model.reye.position, wx.BLUE)
 
     def drawStimulus(self, dc):
-        self.drawPointInGrid(dc, self.state.stimulus, wx.RED)
+        self.drawPointInGrid(dc, self.model.stimulus, wx.RED)
 
     def OnPaint(self, event):
         dc = wx.PaintDC(self)
         dc.Clear()
         self.drawGrid(dc)
-        if self.state.stimulus is not None:
+        if self.model.stimulus is not None:
             self.drawStimulus(dc)
         self.drawEyes(dc)
 
     def OnMouseMovement(self, event):
-        self.state.stimulus = self.xyToGrid(event.GetX(), event.GetY())
+        self.model.stimulus = self.xyToGrid(event.GetX(), event.GetY())
 
 class OTFrame(wx.Frame):
-    def __init__(self, parent, state, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
+    def __init__(self, parent, model, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
         wx.Frame.__init__(self, None, id, title, pos, size, style, name)
 
-        self.state = state
+        self.model = model
 
         panel = wx.Panel(self)
         panel.SetBackgroundColour('#333333')
@@ -149,7 +149,7 @@ class OTFrame(wx.Frame):
         menubar = wx.MenuBar()
         self.SetMenuBar(menubar)
 
-        grid = OTGrid(panel, self.state)
+        grid = OTGrid(panel, self.model)
         grid.SetBackgroundColour('#333333')
         gridBorder = 20
 
@@ -181,14 +181,14 @@ class OTFrame(wx.Frame):
             self.Close()
 
     def OnTimer(self, event):
-        if self.state.stimulus is not None:
-            output = self.state.predict()
+        if self.model.stimulus is not None:
+            output = self.model.predict()
 
-            self.state.leye.velocity = (output[0], output[1])
-            self.state.reye.velocity = (output[2], output[3])
+            self.model.leye.velocity = (output[0], output[1])
+            self.model.reye.velocity = (output[2], output[3])
 
-            self.state.leye.update(self.timestep)
-            self.state.reye.update(self.timestep)
+            self.model.leye.update(self.timestep)
+            self.model.reye.update(self.timestep)
 
             self.Refresh()
 
@@ -196,8 +196,8 @@ if __name__ == '__main__':
     neuralNet = libfann.neural_net()
     neuralNet.create_from_file(nn_file)
 
-    state = State(neuralNet)
+    model = Model(neuralNet)
 
     app = wx.App()
-    OTFrame(None, state, size=windowSize, title='Neural network object tracker')
+    OTFrame(None, model, size=windowSize, title='Neural network object tracker')
     app.MainLoop()
