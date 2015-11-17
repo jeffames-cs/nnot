@@ -132,18 +132,17 @@ class OTGrid(wx.Panel):
         self.state.stimulus = self.xyToGrid(event.GetX(), event.GetY())
 
 class OTFrame(wx.Frame):
-    def __init__(self, parent, model, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
+    def __init__(self, parent, model, state, id = -1, title = '', pos = wx.DefaultPosition, size = wx.DefaultSize, style = wx.DEFAULT_FRAME_STYLE, name = "frame"):
         wx.Frame.__init__(self, None, id, title, pos, size, style, name)
 
         self.model = model
+        self.state = state
 
         panel = wx.Panel(self)
         panel.SetBackgroundColour('#333333')
 
         menubar = wx.MenuBar()
         self.SetMenuBar(menubar)
-
-        self.state = State()
 
         grid = OTGrid(panel, self.state)
         grid.SetBackgroundColour('#333333')
@@ -196,6 +195,8 @@ if __name__ == '__main__':
     neuralNet = libfann.neural_net()
     neuralNet.create_from_file(nn_file)
 
+    state = State()
+
     app = wx.App()
-    OTFrame(None, neuralNet, size=windowSize, title='Neural network object tracker')
+    OTFrame(None, neuralNet, state, size=windowSize, title='Neural network object tracker')
     app.MainLoop()
