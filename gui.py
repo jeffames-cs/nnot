@@ -174,14 +174,17 @@ class OTFrame(wx.Frame):
         self.Bind(wx.EVT_TIMER, self.OnTimer, self.timer)
         self.timer.Start(1000.0 / 60) # 60 fps
         self.timestep = 0.1
+        self.paused = False
 
     def OnKeyUp(self, event):
         keyCode = event.GetKeyCode()
         if keyCode == wx.WXK_ESCAPE:
             self.Close()
+        elif keyCode == wx.WXK_SPACE:
+            self.paused = not self.paused
 
     def OnTimer(self, event):
-        if self.model.stimulus is not None:
+        if self.model.stimulus is not None and not self.paused:
             output = self.model.predict()
 
             self.model.leye.velocity = (output[0], output[1])
